@@ -6,6 +6,7 @@ import {
   Arg,
   Ctx,
   ObjectType,
+  Query,
 } from "type-graphql";
 import { MyContext } from "src/types";
 import { User } from "../entities/User";
@@ -38,10 +39,22 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+  @Query(() => User, { nullable: true })
+  async me(@Ctx() { em, req }: MyContext) {
+    console.log("session:", req.session);
+
+    // User does not have cookie & is not logged in
+    if (!req.session!.userId) {
+      return null;
+    }
+    const user = await em.findOne(User, req.session!.userId);
+    return user;
+  }
+
   @Mutation(() => UserResponse)
   async register(
     @Arg("options") options: UsernamePasswortInput,
-    @Ctx() { em }: MyContext
+    @Ctx() { em, req }: MyContext
   ): Promise<UserResponse> {
     if (options.username.length <= 2) {
       return {
@@ -62,6 +75,8 @@ export class UserResolver {
     });
     try {
       await em.persistAndFlush(user);
+      // store user id session
+      req.session!.userId = user.id;
       return { user };
     } catch (error) {
       console.log("error:", error);
@@ -90,7 +105,7 @@ export class UserResolver {
   @Mutation(() => UserResponse)
   async login(
     @Arg("options") options: UsernamePasswortInput,
-    @Ctx() { em }: MyContext
+    @Ctx() { em, req }: MyContext
   ): Promise<UserResponse> {
     const user = await em.findOne(User, { username: options.username });
     if (!user) {
@@ -111,6 +126,9 @@ export class UserResolver {
       };
     }
     console.log("password is valid");
+    console.log("req session: ", req.session);
+
+    req.session!.userId = user.id;
 
     return { user };
   }
