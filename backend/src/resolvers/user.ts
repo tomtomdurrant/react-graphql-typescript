@@ -125,10 +125,9 @@ export class UserResolver {
         errors: [{ field: "password", message: "incorrect password" }],
       };
     }
+    req.session!.userId = user.id;
     console.log("password is valid");
     console.log("req session: ", req.session);
-
-    req.session!.userId = user.id;
 
     return { user };
   }
