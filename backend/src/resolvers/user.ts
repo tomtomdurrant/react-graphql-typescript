@@ -80,7 +80,10 @@ export class UserResolver {
       return { user };
     } catch (error) {
       console.log("error:", error);
-      if (error.code === "23505") {
+      const duplicateUserName = error.code === "23505";
+      console.log("duplicateUsername error: ", duplicateUserName);
+
+      if (duplicateUserName) {
         // duplicate username code
         return {
           errors: [
