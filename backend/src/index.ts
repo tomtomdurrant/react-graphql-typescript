@@ -1,6 +1,4 @@
 import "reflect-metadata";
-import { MikroORM } from "@mikro-orm/core";
-import mikroOrmConfig from "./mikro-orm.config";
 import express from "express";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
@@ -13,11 +11,21 @@ import connectRedis from "connect-redis";
 import { isProd, COOKIE_NAME } from "./constants";
 import cors from "cors";
 // import { sendEmail } from "./utils/sendEmail";
+import { createConnection } from "typeorm";
+import { Post } from "./entities/Post";
+import { User } from "./entities/User";
 
 const main = async () => {
   // sendEmail("bob@bob.com", "hello world");
-  const orm = await MikroORM.init(mikroOrmConfig);
-  await orm.getMigrator().up();
+  const conn = createConnection({
+    type: "postgres",
+    database: "lireddit2",
+    username: "postgres",
+    password: "password",
+    logging: true,
+    synchronize: true,
+    entities: [Post, User],
+  });
 
   const app = express();
 
@@ -53,7 +61,6 @@ const main = async () => {
       validate: false,
     }),
     context: ({ req, res }) => ({
-      em: orm.em,
       req,
       res,
       redis,
